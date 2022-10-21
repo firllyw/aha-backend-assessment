@@ -8,6 +8,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
@@ -45,5 +46,15 @@ export class UserController {
   @Get('verify-email')
   verifyEmail(@Query() query: VerifyEmailDto) {
     return this.service.verifyEmail(query);
+  }
+
+  @Post('request-change-password')
+  requestChangePassword(@Body() data: { email: string }) {
+    return this.service.sendForgotPasswordEmail(data.email);
+  }
+
+  @Post('change-password')
+  changePassword(@Body() data: ChangePasswordDto) {
+    return this.service.changePassword(data);
   }
 }

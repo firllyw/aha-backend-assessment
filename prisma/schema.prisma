@@ -21,6 +21,7 @@ model User {
   last_name               String
   login_count             Int
   email_verification_code String?  @unique
+  password_change_code    String?  @unique
   email_verified          Boolean  @default(false)
   is_active               Boolean  @default(true)
   created_at              DateTime @default(now())
