@@ -162,7 +162,7 @@ export class UserService {
           email: user.email,
         },
       ],
-      subject: `Hi ${user.first_name}!, Verify Your Email`,
+      subject: `Hi ${user.first_name}! Verify Your Email`,
       templateId: 1,
       params: {
         button_text: 'Verify My Email',
@@ -171,6 +171,7 @@ export class UserService {
         body: 'Click the link below to verify your email',
       },
     };
+    console.log(mailing.params);
     try {
       await mail.sendTransacEmail(mailing);
     } catch (e) {
