@@ -14,6 +14,7 @@ import { FacebookSigninDto } from './dto/facebook-signup.dto';
 import { GoogleSigninDto } from './dto/google-signup.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { RequestPasswordChangeDto } from './dto/request-password-change.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 
 @Injectable()
@@ -95,10 +96,13 @@ export class UserService {
     return data.password == data.re_password;
   }
 
-  async sendForgotPasswordEmail(email: string) {
+  async sendForgotPasswordEmail(data: RequestPasswordChangeDto) {
     let user = await this.prisma.user.findUnique({
-      where: { email: email },
+      where: { email: data.email },
     });
+    if (bcrypt.compareSync(data.password, user.password) == false) {
+      throw new UnauthorizedException('Wrong Password');
+    }
     const code = await (await this.generateOtp()).toString();
     user = await this.prisma.user.update({
       where: {
@@ -123,14 +127,14 @@ export class UserService {
       to: [
         {
           name: user.first_name,
-          email: email,
+          email: data.email,
         },
       ],
       subject: `Password Reset Request`,
       templateId: 1,
       params: {
         button_text: 'Change your password',
-        button_link: `${process.env.BASE_URL}/users/change-password?email=${email}&code=${user.password_change_code}`, // this url should point to frontend, and send this code as POST payload
+        button_link: `${process.env.BASE_URL}/users/change-password?email=${data.email}&code=${user.password_change_code}`, // this url should point to frontend, and send this code as POST payload
         body: 'Click the link below to change your password',
       },
     };
