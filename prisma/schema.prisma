@@ -11,21 +11,22 @@ datasource db {
 }
 
 model User {
-  id                      String   @id @default(uuid())
-  email                   String   @unique
+  id                      String    @id @default(uuid())
+  email                   String    @unique
   password                String?
   google_id               String?
   facebook_id             String?
-  phone                   String?  @unique
+  phone                   String?   @unique
   first_name              String
   last_name               String
   login_count             Int
-  email_verification_code String?  @unique
-  password_change_code    String?  @unique
-  email_verified          Boolean  @default(false)
-  is_active               Boolean  @default(true)
-  created_at              DateTime @default(now())
-  updated_at              DateTime @updatedAt
+  email_verification_code String?   @unique
+  password_change_code    String?   @unique
+  email_verified          Boolean   @default(false)
+  is_active               Boolean   @default(true)
+  last_signed_in          DateTime?
+  created_at              DateTime  @default(now())
+  updated_at              DateTime  @updatedAt
 }
 
 model Admin {

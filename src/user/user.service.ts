@@ -82,7 +82,7 @@ export class UserService {
         where: {
           id: user.id,
         },
-        data: { login_count: user.login_count + 1 },
+        data: { login_count: user.login_count + 1, last_signed_in: new Date() },
       });
       return {
         token,
