@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { User } from '@prisma/client';
+import * as sib from '@sendinblue/client';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { FacebookSigninDto } from './dto/facebook-signup.dto';
@@ -59,9 +60,9 @@ export class UserService {
       },
     });
     await this.sendVerifyEmail(user);
-    const token = await this.jwtService.sign(user.id);
     return {
-      token,
+      message:
+        'We sent a confirmation to your email, please verify it to start using our platform',
     };
   }
 
@@ -71,6 +72,9 @@ export class UserService {
         email: data.email,
       },
     });
+    if (user.email_verified == false) {
+      throw new UnauthorizedException('You need to verify your email');
+    }
     if (await bcrypt.compare(data.password, user.password)) {
       const token = await this.jwtService.sign(user.id);
       await this.prisma.user.update({
@@ -91,19 +95,37 @@ export class UserService {
   }
 
   async sendVerifyEmail(user: User) {
-    await this.mailer.sendMail({
-      to: user.email,
-      from: 'fwahyudi17@gmail.com',
-      sender: 'fwahyudi17@gmail.com',
-      subject: 'Verify your email now',
-      template: '1',
-      context: {
+    const mail = new sib.TransactionalEmailsApi();
+    mail.setApiKey(
+      sib.TransactionalEmailsApiApiKeys.apiKey,
+      process.env.SMTP_API_KEY,
+    );
+    let mailing = new sib.SendSmtpEmail();
+    mailing = {
+      sender: {
+        name: 'no-reply',
+        email: 'fwahyudi17@gmail.com',
+      },
+      to: [
+        {
+          name: user.first_name,
+          email: user.email,
+        },
+      ],
+      subject: `Hi ${user.first_name}!, Verify Your Email`,
+      templateId: 1,
+      params: {
+        button_text: 'Verify My Email',
+        button_link: `http://localhost:3001/users/verify-email?email=${user.email}&code=${user.email_verification_code}`,
         first_name: user.first_name,
         body: 'Click the link below to verify your email',
-        button_link: `http://localhost:3001/users/verify-email?email=${user.email}&code=${user.email_verification_code}`,
-        button_text: 'Verify',
       },
-    });
+    };
+    try {
+      await mail.sendTransacEmail(mailing);
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   async findAll() {
@@ -111,7 +133,7 @@ export class UserService {
   }
 
   async verifyEmail(query: VerifyEmailDto) {
-    const user = await this.prisma.user.findUniqueOrThrow({
+    const user = await this.prisma.user.findFirstOrThrow({
       where: {
         email: query.email,
         email_verification_code: query.code,
@@ -119,7 +141,7 @@ export class UserService {
     });
     user.email_verification_code = null;
     user.email_verified = true;
-    return await this.prisma.user.update({
+    await this.prisma.user.update({
       where: {
         id: user.id,
       },
@@ -127,6 +149,9 @@ export class UserService {
         ...user,
       },
     });
+    return {
+      status: 'Your email is verified',
+    };
   }
 
   async generateOtp() {
