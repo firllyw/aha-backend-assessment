@@ -145,6 +145,7 @@ export class UserService {
   }
 
   async sendVerifyEmail(user: User) {
+    console.log(process.env.SMTP_API_KEY);
     const mail = new sib.TransactionalEmailsApi();
     mail.setApiKey(
       sib.TransactionalEmailsApiApiKeys.apiKey,
